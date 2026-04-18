@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1120">
+<title>Meeting Brain</title>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Meeting Brain&quot;,&quot;short_name&quot;:&quot;Meetings&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230b1120&quot;,&quot;theme_color&quot;:&quot;%230b1120&quot;}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1120; --surface: rgba(255,255,255,0.035); --surface2: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --amber: #f59e0b; --amber2: #d97706; --amber-bg: rgba(245,158,11,0.08);
+  --indigo: #6366f1; --emerald: #10b981; --rose: #f43f5e;
+  --cyan: #06b6d4; --purple: #8b5cf6; --pink: #ec4899;
+  --radius: 10px; --sidebar-w: 320px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text);
+  display:grid; grid-template-rows:auto 1fr; grid-template-columns:var(--sidebar-w) 1fr;
+  height:100vh; overflow:hidden; }
+
+/* ── Header ── */
+.header { grid-column:1/-1; padding:14px 24px; display:flex; align-items:center; gap:16px;
+  background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(245,158,11,0.06));
+  border-bottom:1px solid var(--border); }
+.header .logo { font-size:1.3em; font-weight:700; letter-spacing:-0.5px; }
+.header .logo span { color:var(--amber); }
+.header .stats { display:flex; gap:20px; margin-left:auto; }
+.stat { text-align:center; }
+.stat-val { font-size:1.2em; font-weight:700; color:var(--amber); }
+.stat-lbl { font-size:0.65em; text-transform:uppercase; letter-spacing:1px; color:var(--text3); }
+
+/* ── Sidebar ── */
+.sidebar { grid-row:2; border-right:1px solid var(--border); display:flex;
+  flex-direction:column; overflow:hidden; background:rgba(0,0,0,0.15); }
+.sidebar-search { padding:12px; border-bottom:1px solid var(--border); }
+.sidebar-search input { width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); font-family:inherit; font-size:0.85em; outline:none; }
+.sidebar-search input:focus { border-color:var(--amber); }
+.meeting-list { flex:1; overflow-y:auto; padding:8px; }
+.meeting-list::-webkit-scrollbar { width:5px; }
+.meeting-list::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.date-group { font-size:0.7em; text-transform:uppercase; letter-spacing:1.5px; color:var(--text3);
+  padding:12px 8px 6px; font-weight:600; }
+.meeting-card { padding:12px 14px; border-radius:var(--radius); cursor:pointer;
+  border-left:3px solid transparent; margin-bottom:2px; transition:all 0.15s; }
+.meeting-card:hover { background:var(--surface); }
+.meeting-card.active { background:var(--amber-bg); border-left-color:var(--amber); }
+.mc-title { font-size:0.88em; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mc-meta { font-size:0.72em; color:var(--text3); margin-top:3px; display:flex; gap:10px; }
+.mc-badge { font-size:0.65em; background:var(--surface2); padding:2px 7px; border-radius:4px;
+  color:var(--amber); font-weight:600; }
+
+/* ── Main ── */
+.main { grid-row:2; display:flex; flex-direction:column; overflow:hidden; }
+.main-header { padding:20px 28px 0; }
+.main-title { font-size:1.6em; font-weight:700; letter-spacing:-0.5px; }
+.main-meta { font-size:0.82em; color:var(--text2); margin-top:4px; display:flex;
+  flex-wrap:wrap; gap:16px; align-items:center; }
+.main-meta .speaker-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+/* Tabs */
+.tabs { display:flex; gap:0; margin:16px 28px 0; border-bottom:1px solid var(--border); }
+.tab { padding:10px 20px; font-size:0.85em; font-weight:500; color:var(--text3); cursor:pointer;
+  border-bottom:2px solid transparent; transition:all 0.15s; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--amber); border-bottom-color:var(--amber); }
+
+/* Tab content */
+.tab-content { flex:1; overflow-y:auto; padding:20px 28px 40px; }
+.tab-content::-webkit-scrollbar { width:6px; }
+.tab-content::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* Summary cards */
+.sum-section { margin-bottom:24px; }
+.sum-label { font-size:0.72em; text-transform:uppercase; letter-spacing:1.5px; color:var(--text3);
+  font-weight:600; margin-bottom:8px; }
+.sum-overview { font-size:1em; line-height:1.7; color:var(--text); padding:16px;
+  background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); }
+.sum-list { list-style:none; }
+.sum-list li { padding:10px 14px; border-left:3px solid var(--indigo); margin-bottom:6px;
+  background:var(--surface); border-radius:0 var(--radius) var(--radius) 0;
+  font-size:0.88em; line-height:1.5; }
+.sum-list.decisions li { border-left-color:var(--emerald); }
+.sum-list.followups li { border-left-color:var(--rose); }
+
+/* Action items table */
+.actions-table { width:100%; border-collapse:collapse; font-size:0.85em; }
+.actions-table th { text-align:left; padding:8px 12px; color:var(--text3); font-weight:600;
+  font-size:0.78em; text-transform:uppercase; letter-spacing:1px;
+  border-bottom:1px solid var(--border); }
+.actions-table td { padding:10px 12px; border-bottom:1px solid var(--border); }
+.actions-table tr:hover td { background:var(--surface); }
+.owner-tag { background:var(--amber-bg); color:var(--amber); padding:3px 8px;
+  border-radius:4px; font-size:0.85em; font-weight:600; white-space:nowrap; }
+
+/* Topics */
+.topic { margin-bottom:8px; }
+.topic-name { font-weight:600; font-size:0.9em; color:var(--cyan); }
+.topic-text { font-size:0.85em; color:var(--text2); margin-top:2px; line-height:1.5; }
+
+/* Transcript */
+.tx-seg { display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+.tx-seg:hover { background:var(--surface); margin:0 -12px; padding:10px 12px; border-radius:6px; }
+.tx-time { font-size:0.75em; color:var(--text3); min-width:48px; padding-top:2px; font-variant-numeric:tabular-nums; }
+.tx-speaker { font-size:0.78em; font-weight:600; min-width:80px; padding-top:2px; }
+.tx-text { font-size:0.88em; line-height:1.6; color:var(--text); flex:1; }
+
+/* Audio player */
+.audio-player { margin:12px 28px 0; }
+.audio-player audio { width:100%; height:36px; border-radius:8px; }
+
+/* Search */
+.search-input { width:100%; padding:12px 16px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--surface); color:var(--text); font-size:0.95em; font-family:inherit; outline:none;
+  margin-bottom:16px; }
+.search-input:focus { border-color:var(--amber); }
+.search-result { padding:14px; background:var(--surface); border-radius:var(--radius);
+  border:1px solid var(--border); margin-bottom:10px; }
+.sr-meeting { font-size:0.78em; color:var(--amber); font-weight:600; margin-bottom:6px; }
+.sr-text { font-size:0.88em; line-height:1.5; }
+.sr-text mark { background:rgba(245,158,11,0.3); color:var(--text); padding:1px 3px; border-radius:2px; }
+
+/* Empty state */
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; text-align:center; padding:40px; }
+.empty-icon { font-size:64px; margin-bottom:16px; opacity:0.4; }
+.empty-title { font-size:1.3em; font-weight:600; margin-bottom:8px; }
+.empty-text { color:var(--text3); font-size:0.9em; line-height:1.7; max-width:500px; }
+.empty-cmd { background:var(--surface); padding:10px 16px; border-radius:8px; font-family:monospace;
+  font-size:0.85em; color:var(--amber); margin-top:16px; border:1px solid var(--border); }
+
+/* Language badge */
+.lang-badge { font-size:0.65em; background:rgba(99,102,241,0.15); color:var(--indigo);
+  padding:2px 7px; border-radius:4px; font-weight:600; text-transform:uppercase; }
+
+/* Hamburger */
+.hamburger { display:none; background:none; border:none; color:var(--text); font-size:1.5em;
+  cursor:pointer; padding:4px 8px; border-radius:6px; line-height:1; }
+.hamburger:hover { background:var(--surface); }
+.sidebar-close { display:none; position:absolute; top:10px; right:12px; background:none;
+  border:none; color:var(--text2); font-size:1.4em; cursor:pointer; }
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+  z-index:99; }
+
+/* Mobile */
+@media(max-width:800px) {
+  body { grid-template-columns:1fr; }
+  .hamburger { display:block; }
+  .sidebar { display:none; position:fixed; top:0; left:0; bottom:0; width:85%;
+    max-width:340px; z-index:100; background:var(--bg); border-right:1px solid var(--border); }
+  .sidebar.open { display:flex; }
+  .sidebar.open ~ .sidebar-overlay { display:block; }
+  .sidebar-close { display:block; }
+  .header .stats { display:none; }
+  .main-header { padding:14px 16px 0; }
+  .main-title { font-size:1.2em; }
+  .main-meta { font-size:0.75em; gap:8px; }
+  .tabs { margin:12px 16px 0; }
+  .tab { padding:8px 14px; font-size:0.82em; }
+  .tab-content { padding:14px 16px 30px; }
+  .tx-seg { gap:8px; }
+  .tx-speaker { min-width:60px; font-size:0.72em; }
+  .tx-time { min-width:36px; font-size:0.7em; }
+  .audio-player { margin:8px 16px 0; }
+  .actions-table { font-size:0.78em; }
+  .actions-table th, .actions-table td { padding:6px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+  <div class="logo">&#x1F9E0; Meeting <span>Brain</span></div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+  <div class="sidebar-search">
+    <input type="text" id="sidebarSearch" placeholder="Filter meetings..." oninput="filterMeetings()">
+  </div>
+  <div class="meeting-list" id="meetingList"></div>
+</div>
+
+<div class="main" id="main">
+  <div class="empty" id="emptyState">
+    <div class="empty-icon">&#x1F9E0;</div>
+    <div class="empty-title">No meetings yet</div>
+    <div class="empty-text">
+      Drop audio files in the <b>meetings/inbox/</b> folder,<br>
+      or process them directly from the command line:
+    </div>
+    <div class="empty-cmd">python meeting_brain.py process recording.wav</div>
+    <div class="empty-text" style="margin-top:16px">
+      Get free API keys:<br>
+      Deepgram ($200 credit): deepgram.com<br>
+      Anthropic: console.anthropic.com
+    </div>
+  </div>
+
+  <div id="meetingView" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="main-header">
+      <div class="main-title" id="mTitle"></div>
+      <div class="main-meta" id="mMeta"></div>
+    </div>
+    <div class="audio-player" id="audioPlayer"></div>
+    <div class="tabs" id="tabBar">
+      <div class="tab active" onclick="switchTab('summary')">Summary</div>
+      <div class="tab" onclick="switchTab('transcript')">Transcript</div>
+      <div class="tab" onclick="switchTab('search')">Search All</div>
+    </div>
+    <div class="tab-content">
+      <div class="tab-pane active" id="pane-summary"></div>
+      <div class="tab-pane" id="pane-transcript"></div>
+      <div class="tab-pane" id="pane-search">
+        <input type="text" class="search-input" id="globalSearch"
+          placeholder="Search across all meeting transcripts..." oninput="globalSearchFn()">
+        <div id="searchResults"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MEETINGS = [];
+const SPEAKER_COLORS = ['#f59e0b','#6366f1','#10b981','#f43f5e','#8b5cf6','#06b6d4','#ec4899','#14b8a6'];
+let activeMeeting = null;
+let speakerNames = JSON.parse(localStorage.getItem('mb_speakers') || '{}');
+
+function fmtDur(s) {
+  s = Math.round(s);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm';
+}
+function fmtTime(s) {
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m + ':' + String(sec).padStart(2,'0');
+}
+function relDate(iso) {
+  const d = new Date(iso), now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return days + ' days ago';
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+function groupLabel(iso) {
+  const d = new Date(iso), now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if (days === 0) return 'Today';
+  if (days < 7) return 'This Week';
+  if (days < 30) return 'This Month';
+  return 'Earlier';
+}
+function speakerName(m, sid) {
+  const key = m.id + '_' + sid;
+  return speakerNames[key] || m.speakers[String(sid)] || ('Speaker ' + (parseInt(sid)+1));
+}
+function speakerColor(sid) { return SPEAKER_COLORS[parseInt(sid) % SPEAKER_COLORS.length]; }
+
+// ── Stats ──
+function renderStats() {
+  const el = document.getElementById('stats');
+  const totalHrs = MEETINGS.reduce((a,m) => a + m.duration_seconds, 0) / 3600;
+  const totalActions = MEETINGS.reduce((a,m) => a + (m.summary?.action_items?.length || 0), 0);
+  const allSpeakers = new Set();
+  MEETINGS.forEach(m => Object.values(m.speakers || {}).forEach(s => allSpeakers.add(s)));
+  el.innerHTML = [
+    ['Meetings', MEETINGS.length],
+    ['Hours', totalHrs.toFixed(1)],
+    ['Actions', totalActions],
+    ['Speakers', allSpeakers.size],
+  ].map(([l,v]) => `<div class="stat"><div class="stat-val">${v}</div><div class="stat-lbl">${l}</div></div>`).join('');
+}
+
+// ── Meeting List ──
+function renderMeetingList(filter) {
+  const el = document.getElementById('meetingList');
+  const fl = (filter || '').toLowerCase();
+  const filtered = MEETINGS.filter(m => !fl || m.title.toLowerCase().includes(fl)
+    || (m.summary?.overview||'').toLowerCase().includes(fl));
+
+  if (!filtered.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:0.85em">' +
+      (MEETINGS.length ? 'No matches' : 'No meetings yet') + '</div>';
+    return;
+  }
+
+  let html = '', lastGroup = '';
+  filtered.forEach(m => {
+    const g = groupLabel(m.date);
+    if (g !== lastGroup) { html += `<div class="date-group">${g}</div>`; lastGroup = g; }
+    const dt = new Date(m.date);
+    const time = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    const acts = m.summary?.action_items?.length || 0;
+    const cls = activeMeeting && activeMeeting.id === m.id ? ' active' : '';
+    const lang = m.language && m.language !== 'en' ? `<span class="lang-badge">${m.language}</span>` : '';
+    html += `<div class="meeting-card${cls}" onclick="selectMeeting('${m.id}');document.getElementById('sidebar').classList.remove('open');">
+      <div class="mc-title">${esc(m.title)} ${lang}</div>
+      <div class="mc-meta">
+        <span>${time}</span><span>${fmtDur(m.duration_seconds)}</span>
+        <span>${Object.keys(m.speakers||{}).length} spk</span>
+        ${acts ? `<span class="mc-badge">${acts} actions</span>` : ''}
+      </div></div>`;
+  });
+  el.innerHTML = html;
+}
+function filterMeetings() { renderMeetingList(document.getElementById('sidebarSearch').value); }
+
+// ── Select Meeting ──
+function selectMeeting(id) {
+  activeMeeting = MEETINGS.find(m => m.id === id);
+  if (!activeMeeting) return;
+
+  document.getElementById('emptyState').style.display = 'none';
+  const view = document.getElementById('meetingView');
+  view.style.display = 'flex';
+
+  const m = activeMeeting;
+  const dt = new Date(m.date);
+  document.getElementById('mTitle').textContent = m.title;
+
+  let metaHtml = `<span>${dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</span>`;
+  metaHtml += `<span>${fmtDur(m.duration_seconds)}</span>`;
+  metaHtml += `<span>${m.word_count?.toLocaleString() || '?'} words</span>`;
+  Object.keys(m.speakers || {}).forEach(sid => {
+    metaHtml += `<span><span class="speaker-dot" style="background:${speakerColor(sid)}"></span> ${esc(speakerName(m,sid))}</span>`;
+  });
+  document.getElementById('mMeta').innerHTML = metaHtml;
+
+  // Audio
+  const ap = document.getElementById('audioPlayer');
+  ap.innerHTML = m.audio_file ? `<audio controls preload="none" src="${m.audio_file}"></audio>` : '';
+
+  renderSummary(m);
+  renderTranscript(m);
+  renderMeetingList(document.getElementById('sidebarSearch').value);
+  switchTab('summary');
+}
+
+// ── Summary ──
+function renderSummary(m) {
+  const s = m.summary || {};
+  let html = '';
+
+  if (s.overview) {
+    html += `<div class="sum-section"><div class="sum-label">Overview</div>
+      <div class="sum-overview">${esc(s.overview)}</div></div>`;
+  }
+  if (s.action_items?.length) {
+    html += `<div class="sum-section"><div class="sum-label">Action Items (${s.action_items.length})</div>
+      <table class="actions-table"><tr><th>Owner</th><th>Task</th><th>Due</th></tr>`;
+    s.action_items.forEach(a => {
+      html += `<tr><td><span class="owner-tag">${esc(a.owner)}</span></td>
+        <td>${esc(a.task)}</td><td style="color:var(--text3)">${a.due && a.due !== 'null' ? esc(a.due) : '-'}</td></tr>`;
+    });
+    html += '</table></div>';
+  }
+  if (s.key_decisions?.length) {
+    html += `<div class="sum-section"><div class="sum-label">Key Decisions</div><ul class="sum-list decisions">`;
+    s.key_decisions.forEach(d => html += `<li>${esc(d)}</li>`);
+    html += '</ul></div>';
+  }
+  if (s.topics?.length) {
+    html += `<div class="sum-section"><div class="sum-label">Topics Discussed</div>`;
+    s.topics.forEach(t => {
+      html += `<div class="topic"><div class="topic-name">${esc(t.name)}</div>
+        <div class="topic-text">${esc(t.summary)}</div></div>`;
+    });
+    html += '</div>';
+  }
+  if (s.follow_ups?.length) {
+    html += `<div class="sum-section"><div class="sum-label">Follow-ups Needed</div><ul class="sum-list followups">`;
+    s.follow_ups.forEach(f => html += `<li>${esc(f)}</li>`);
+    html += '</ul></div>';
+  }
+
+  document.getElementById('pane-summary').innerHTML = html || '<div style="color:var(--text3);padding:20px">No summary available.</div>';
+}
+
+// ── Transcript ──
+function renderTranscript(m) {
+  const tx = m.transcript || [];
+  if (!tx.length) {
+    document.getElementById('pane-transcript').innerHTML =
+      '<div style="color:var(--text3);padding:20px">No transcript available.</div>';
+    return;
+  }
+  let html = '';
+  tx.forEach(seg => {
+    const c = speakerColor(seg.speaker);
+    html += `<div class="tx-seg">
+      <div class="tx-time">${fmtTime(seg.start)}</div>
+      <div class="tx-speaker" style="color:${c}">${esc(speakerName(m, seg.speaker))}</div>
+      <div class="tx-text">${esc(seg.text)}</div></div>`;
+  });
+  document.getElementById('pane-transcript').innerHTML = html;
+}
+
+// ── Tabs ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['summary','transcript','search'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'pane-'+name));
+}
+
+// ── Global Search ──
+function globalSearchFn() {
+  const q = document.getElementById('globalSearch').value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if (q.length < 2) { el.innerHTML = ''; return; }
+
+  let results = [];
+  MEETINGS.forEach(m => {
+    (m.transcript || []).forEach(seg => {
+      if (seg.text.toLowerCase().includes(q)) {
+        results.push({m, seg});
+      }
+    });
+  });
+
+  if (!results.length) {
+    el.innerHTML = '<div style="color:var(--text3);padding:20px;text-align:center">No matches found.</div>';
+    return;
+  }
+
+  const qre = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+  el.innerHTML = results.slice(0, 50).map(r => {
+    const dt = new Date(r.m.date).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const highlighted = esc(r.seg.text).replace(qre, '<mark>$1</mark>');
+    return `<div class="search-result" onclick="selectMeeting('${r.m.id}');switchTab('transcript');">
+      <div class="sr-meeting">${esc(r.m.title)} - ${dt} [${fmtTime(r.seg.start)}]</div>
+      <div class="sr-text"><span style="color:${speakerColor(r.seg.speaker)};font-weight:600">${esc(speakerName(r.m, r.seg.speaker))}:</span> ${highlighted}</div>
+    </div>`;
+  }).join('');
+  if (results.length > 50) el.innerHTML += `<div style="color:var(--text3);padding:12px;text-align:center">+${results.length-50} more results</div>`;
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── Init ──
+renderStats();
+renderMeetingList();
+if (MEETINGS.length) selectMeeting(MEETINGS[0].id);
+</script>
+</body>
+</html>
