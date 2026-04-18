@@ -333,6 +333,7 @@ let activeMeeting = null;
 let speakerNames = JSON.parse(localStorage.getItem('mb_speakers') || '{}');
 let _lastFile = null;
 let _abortCtrl = null;
+let _isProcessing = false;
 
 function fmtDur(s) {
   s = Math.round(s);
@@ -403,12 +404,14 @@ function renderMeetingList(filter) {
     const acts = m.summary?.action_items?.length || 0;
     const cls = activeMeeting && activeMeeting.id === m.id ? ' active' : '';
     const lang = m.language && m.language !== 'en' ? `<span class="lang-badge">${m.language}</span>` : '';
+    const phoneBadge = m._source === 'phone' ? '<span class="mc-badge" style="color:var(--cyan)">phone</span>' : '';
     html += `<div class="meeting-card${cls}" onclick="selectMeeting('${m.id}');document.getElementById('sidebar').classList.remove('open');">
       <div class="mc-title">${esc(m.title)} ${lang}</div>
       <div class="mc-meta">
         <span>${time}</span><span>${fmtDur(m.duration_seconds)}</span>
         <span>${Object.keys(m.speakers||{}).length} spk</span>
         ${acts ? `<span class="mc-badge">${acts} actions</span>` : ''}
+        ${phoneBadge}
       </div></div>`;
   });
   el.innerHTML = html;
@@ -426,7 +429,8 @@ function selectMeeting(id) {
 
   const m = activeMeeting;
   const dt = new Date(m.date);
-  document.getElementById('mTitle').textContent = m.title;
+  document.getElementById('mTitle').innerHTML = esc(m.title) +
+    (m._source === 'phone' ? ` <button onclick="if(confirm('Delete this meeting?'))deletePhoneMeeting('${m.id}')" style="background:none;border:none;color:var(--rose);cursor:pointer;font-size:0.7em;vertical-align:middle;padding:2px 6px;opacity:0.6" title="Delete">&times;</button>` : '');
 
   let metaHtml = `<span>${dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</span>`;
   metaHtml += `<span>${fmtDur(m.duration_seconds)}</span>`;
@@ -637,6 +641,9 @@ function hideProgress() { document.getElementById('processOverlay').style.displa
 
 // ── Core Processing Pipeline ──
 async function processAudioFile(file) {
+  if (_isProcessing) { showToast('Already processing', 'error'); return; }
+  _isProcessing = true;
+
   const proxyUrl = localStorage.getItem('mb_proxy_url');
   const dgKey = localStorage.getItem('mb_dg_key');
   const antKey = localStorage.getItem('mb_ant_key');
@@ -693,8 +700,10 @@ async function processAudioFile(file) {
 
     let language = 'en';
     const chs = dgResult.results?.channels || [];
-    if (chs.length && chs[0].alternatives?.length) {
-      language = chs[0].alternatives[0].detected_language || 'en';
+    if (chs.length) {
+      language = chs[0].detected_language
+        || (chs[0].alternatives?.length && chs[0].alternatives[0].detected_language)
+        || 'en';
     }
 
     if (transcript.length === 0) {
@@ -703,26 +712,32 @@ async function processAudioFile(file) {
 
     // Step 3: Summarize
     updateStep(2, 'active', 'Analyzing with AI...');
-    const sumResp = await fetch(proxyUrl + '/summarize', {
-      method: 'POST', signal,
-      headers: {'Content-Type': 'application/json', 'X-Anthropic-Key': antKey},
-      body: JSON.stringify({transcript: fullText, speaker_count: speakerSet.size, language: language})
-    });
-    if (!sumResp.ok) {
-      const errText = await sumResp.text();
-      throw new Error('Summarization failed (' + sumResp.status + '): ' + errText.slice(0, 200));
-    }
-    const sumResult = await sumResp.json();
-
-    let summaryText = (sumResult.content?.[0]?.text || '').trim();
-    summaryText = summaryText.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
     let summary;
-    try { summary = JSON.parse(summaryText); }
-    catch (e) {
-      summary = {title:'Meeting Notes', overview:summaryText.slice(0,500),
+    try {
+      const sumResp = await fetch(proxyUrl + '/summarize', {
+        method: 'POST', signal,
+        headers: {'Content-Type': 'application/json', 'X-Anthropic-Key': antKey},
+        body: JSON.stringify({transcript: fullText, speaker_count: speakerSet.size, language: language})
+      });
+      if (!sumResp.ok) {
+        const errText = await sumResp.text();
+        throw new Error('(' + sumResp.status + ') ' + errText.slice(0, 200));
+      }
+      const sumResult = await sumResp.json();
+      let summaryText = (sumResult.content?.[0]?.text || '').trim();
+      summaryText = summaryText.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      try { summary = JSON.parse(summaryText); }
+      catch (e) {
+        summary = {title:'Meeting Notes', overview:summaryText.slice(0,500),
+          key_decisions:[], action_items:[], topics:[], follow_ups:[], sentiment:'neutral'};
+      }
+      updateStep(2, 'done');
+    } catch (sumErr) {
+      if (sumErr.name === 'AbortError') throw sumErr;
+      updateStep(2, 'error', 'Summary failed - saving transcript only');
+      summary = {title:'Meeting ' + new Date().toLocaleDateString(), overview:'Summarization failed: ' + sumErr.message,
         key_decisions:[], action_items:[], topics:[], follow_ups:[], sentiment:'neutral'};
     }
-    updateStep(2, 'done');
 
     // Step 4: Create meeting object
     const now = new Date();
@@ -745,9 +760,7 @@ async function processAudioFile(file) {
     };
 
     // Save to localStorage
-    const uploaded = JSON.parse(localStorage.getItem('mb_meetings') || '[]');
-    uploaded.unshift(meeting);
-    localStorage.setItem('mb_meetings', JSON.stringify(uploaded));
+    saveMeetingToStorage(meeting);
 
     // Update in-memory array and re-render
     MEETINGS.unshift(meeting);
@@ -764,14 +777,46 @@ async function processAudioFile(file) {
     }, 800);
 
   } catch (err) {
-    if (err.name === 'AbortError') { hideProgress(); return; }
+    if (err.name === 'AbortError') { hideProgress(); _isProcessing = false; return; }
     const currentStep = document.querySelector('.mb-step.active');
     if (currentStep) {
       const idx = parseInt(currentStep.id.replace('pStep', ''));
       updateStep(idx, 'error');
     }
     showProgressError(err.message);
+  } finally {
+    _isProcessing = false;
   }
+}
+
+function saveMeetingToStorage(meeting) {
+  const uploaded = JSON.parse(localStorage.getItem('mb_meetings') || '[]');
+  uploaded.unshift(meeting);
+  try {
+    localStorage.setItem('mb_meetings', JSON.stringify(uploaded));
+  } catch (e) {
+    if (uploaded.length > 1) {
+      uploaded.pop();
+      try { localStorage.setItem('mb_meetings', JSON.stringify(uploaded)); }
+      catch (e2) { showToast('Storage full - meeting saved in memory only', 'error'); }
+    }
+  }
+}
+
+function deletePhoneMeeting(id) {
+  const uploaded = JSON.parse(localStorage.getItem('mb_meetings') || '[]');
+  const filtered = uploaded.filter(m => m.id !== id);
+  localStorage.setItem('mb_meetings', JSON.stringify(filtered));
+  const idx = MEETINGS.findIndex(m => m.id === id);
+  if (idx > -1) MEETINGS.splice(idx, 1);
+  if (activeMeeting && activeMeeting.id === id) {
+    activeMeeting = null;
+    document.getElementById('meetingView').style.display = 'none';
+    document.getElementById('emptyState').style.display = '';
+  }
+  renderStats();
+  renderMeetingList();
+  showToast('Meeting deleted', 'success');
 }
 
 // ── Init ──
