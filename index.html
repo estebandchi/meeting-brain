@@ -172,7 +172,91 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
   .audio-player { margin:8px 16px 0; }
   .actions-table { font-size:0.78em; }
   .actions-table th, .actions-table td { padding:6px 8px; }
+  .mb-fab { width:60px; height:60px; bottom:20px; right:20px; }
+  .mb-fab svg { width:26px; height:26px; }
+  .mb-modal { width:92vw; max-height:85vh; }
+  .mb-steps { gap:14px; }
+  .mb-step-label { font-size:0.85em; }
 }
+
+/* ── Settings / Upload / Processing ── */
+.mb-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.mb-modal { background:#151b2e; border:1px solid var(--border2); border-radius:14px;
+  padding:24px; width:420px; max-width:95vw; max-height:90vh; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+.mb-modal-title { font-size:1.15em; font-weight:600; margin-bottom:16px; color:var(--text); }
+.mb-field { margin-bottom:14px; }
+.mb-field label { display:block; font-size:0.8em; color:var(--text2); margin-bottom:5px; font-weight:500; }
+.mb-field-row { display:flex; gap:6px; }
+.mb-field input { flex:1; background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.88em;
+  font-family:inherit; outline:none; transition:border 0.2s; }
+.mb-field input:focus { border-color:var(--amber); }
+.mb-field .mb-eye { background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:0 10px; cursor:pointer; color:var(--text3);
+  display:flex; align-items:center; font-size:1.1em; transition:color 0.2s; }
+.mb-field .mb-eye:hover { color:var(--text); }
+.mb-field .mb-hint { font-size:0.72em; color:var(--text3); margin-top:4px; }
+.mb-field .mb-saved { color:var(--emerald); }
+.mb-btns { display:flex; gap:10px; margin-top:18px; }
+.mb-btns button { flex:1; padding:10px; border-radius:8px; font-weight:600;
+  font-size:0.88em; cursor:pointer; border:none; font-family:inherit; transition:all 0.2s; }
+.mb-btn-primary { background:var(--amber); color:#000; }
+.mb-btn-primary:hover { background:var(--amber2); }
+.mb-btn-secondary { background:var(--surface2); color:var(--text2); border:1px solid var(--border) !important; }
+.mb-btn-secondary:hover { color:var(--text); }
+
+.mb-fab { position:fixed; bottom:24px; right:24px; width:56px; height:56px;
+  border-radius:50%; background:linear-gradient(135deg, var(--amber), var(--amber2));
+  border:none; cursor:pointer; z-index:50; display:flex; align-items:center;
+  justify-content:center; box-shadow:0 4px 20px rgba(245,158,11,0.35);
+  transition:transform 0.2s, box-shadow 0.2s; }
+.mb-fab:hover { transform:scale(1.08); box-shadow:0 6px 28px rgba(245,158,11,0.5); }
+.mb-fab:active { transform:scale(0.95); }
+.mb-fab svg { width:24px; height:24px; fill:#000; }
+@keyframes mb-pulse { 0%,100%{box-shadow:0 4px 20px rgba(245,158,11,0.35)}
+  50%{box-shadow:0 4px 30px rgba(245,158,11,0.6)} }
+.mb-fab.pulse { animation:mb-pulse 2s infinite; }
+
+.mb-steps { display:flex; flex-direction:column; gap:16px; margin:8px 0; }
+.mb-step { display:flex; align-items:center; gap:12px; }
+.mb-step-icon { width:32px; height:32px; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-size:0.85em; flex-shrink:0;
+  background:var(--surface2); color:var(--text3); border:2px solid var(--border);
+  transition:all 0.3s; }
+.mb-step.active .mb-step-icon { border-color:var(--amber); color:var(--amber);
+  background:var(--amber-bg); }
+.mb-step.done .mb-step-icon { border-color:var(--emerald); color:#fff;
+  background:var(--emerald); }
+.mb-step.error .mb-step-icon { border-color:var(--rose); color:#fff; background:var(--rose); }
+.mb-step-label { font-size:0.9em; color:var(--text3); transition:color 0.3s; }
+.mb-step.active .mb-step-label { color:var(--text); font-weight:500; }
+.mb-step.done .mb-step-label { color:var(--text2); }
+.mb-step.error .mb-step-label { color:var(--rose); }
+.mb-step-detail { font-size:0.75em; color:var(--text3); margin-left:44px; margin-top:-8px; }
+@keyframes mb-spin { to{transform:rotate(360deg)} }
+.mb-spinner { width:18px; height:18px; border:2px solid var(--border);
+  border-top-color:var(--amber); border-radius:50%; animation:mb-spin 0.8s linear infinite; }
+
+.mb-error-box { margin-top:12px; padding:12px; background:rgba(244,63,94,0.1);
+  border:1px solid rgba(244,63,94,0.3); border-radius:8px; }
+.mb-error-msg { font-size:0.82em; color:var(--rose); word-break:break-word; }
+.mb-error-btns { display:flex; gap:8px; margin-top:10px; }
+.mb-error-btns button { padding:6px 14px; border-radius:6px; font-size:0.82em;
+  cursor:pointer; border:none; font-family:inherit; font-weight:500; }
+
+.mb-toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%);
+  padding:10px 20px; border-radius:10px; font-size:0.85em; font-weight:500;
+  z-index:300; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+.mb-toast.show { opacity:1; }
+.mb-toast.success { background:var(--emerald); color:#fff; }
+.mb-toast.error { background:var(--rose); color:#fff; }
+
+.mb-settings-btn { background:none; border:none; cursor:pointer; color:var(--text3);
+  padding:4px; display:flex; align-items:center; transition:color 0.2s; }
+.mb-settings-btn:hover { color:var(--amber); }
+.mb-settings-btn svg { width:20px; height:20px; }
 </style>
 </head>
 <body>
@@ -180,6 +264,7 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
 <div class="header">
   <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
   <div class="logo">&#x1F9E0; Meeting <span>Brain</span></div>
+  <button class="mb-settings-btn" onclick="openSettings()" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
   <div class="stats" id="stats"></div>
 </div>
 
@@ -196,11 +281,15 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
   <div class="empty" id="emptyState">
     <div class="empty-icon">&#x1F9E0;</div>
     <div class="empty-title">No meetings yet</div>
-    <div class="empty-text">
+    <div class="empty-text" id="emptyDesktop">
       Drop audio files in the <b>meetings/inbox/</b> folder,<br>
       or process them directly from the command line:
     </div>
-    <div class="empty-cmd">python meeting_brain.py process recording.wav</div>
+    <div class="empty-cmd" id="emptyCmdLine">python meeting_brain.py process recording.wav</div>
+    <div class="empty-text" id="emptyMobile" style="display:none">
+      Tap the <b style="color:var(--amber)">upload button</b> below to add a voice memo,<br>
+      or tap the <b>gear icon</b> above to set up your API keys first.
+    </div>
     <div class="empty-text" style="margin-top:16px">
       Get free API keys:<br>
       Deepgram ($200 credit): deepgram.com<br>
@@ -232,10 +321,18 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
 </div>
 
 <script>
-const MEETINGS = [];
+const _EMBEDDED = [];
+const _UPLOADED = JSON.parse(localStorage.getItem('mb_meetings') || '[]');
+const _byId = {};
+_EMBEDDED.forEach(m => _byId[m.id] = m);
+_UPLOADED.forEach(m => _byId[m.id] = m);
+const MEETINGS = Object.values(_byId).sort((a,b) => new Date(b.date) - new Date(a.date));
+
 const SPEAKER_COLORS = ['#f59e0b','#6366f1','#10b981','#f43f5e','#8b5cf6','#06b6d4','#ec4899','#14b8a6'];
 let activeMeeting = null;
 let speakerNames = JSON.parse(localStorage.getItem('mb_speakers') || '{}');
+let _lastFile = null;
+let _abortCtrl = null;
 
 function fmtDur(s) {
   s = Math.round(s);
@@ -455,10 +552,304 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
+// ── Settings ──
+function openSettings() {
+  document.getElementById('sProxyUrl').value = localStorage.getItem('mb_proxy_url') || '';
+  document.getElementById('sDgKey').value = localStorage.getItem('mb_dg_key') || '';
+  document.getElementById('sAntKey').value = localStorage.getItem('mb_ant_key') || '';
+  document.getElementById('settingsOverlay').style.display = 'flex';
+}
+function closeSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
+function saveSettings() {
+  const proxy = document.getElementById('sProxyUrl').value.trim().replace(/\/+$/, '');
+  const dg = document.getElementById('sDgKey').value.trim();
+  const ant = document.getElementById('sAntKey').value.trim();
+  if (!proxy || !dg || !ant) { showToast('All fields required', 'error'); return; }
+  localStorage.setItem('mb_proxy_url', proxy);
+  localStorage.setItem('mb_dg_key', dg);
+  localStorage.setItem('mb_ant_key', ant);
+  closeSettings();
+  showToast('Settings saved', 'success');
+  document.getElementById('uploadFab').classList.add('pulse');
+}
+function toggleVis(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+  const t = document.getElementById('mbToast');
+  t.textContent = msg;
+  t.className = 'mb-toast show ' + (type || 'success');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Upload ──
+function triggerUpload() {
+  if (!localStorage.getItem('mb_proxy_url') || !localStorage.getItem('mb_dg_key') || !localStorage.getItem('mb_ant_key')) {
+    openSettings();
+    showToast('Enter your API keys first', 'error');
+    return;
+  }
+  document.getElementById('audioFileInput').click();
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  _lastFile = file;
+  processAudioFile(file);
+}
+function retryUpload() {
+  if (_lastFile) processAudioFile(_lastFile);
+}
+
+// ── Processing Progress ──
+function showProgress(fileName) {
+  document.getElementById('processTitle').textContent = 'Processing: ' + (fileName || 'Audio');
+  document.getElementById('processError').style.display = 'none';
+  document.getElementById('processDetail').textContent = '';
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('pStep' + i);
+    el.className = 'mb-step';
+    el.querySelector('.mb-step-icon').innerHTML = i < 3 ? String(i + 1) : '\u2713';
+  }
+  document.getElementById('processOverlay').style.display = 'flex';
+}
+function updateStep(idx, state, detail) {
+  const el = document.getElementById('pStep' + idx);
+  el.className = 'mb-step ' + state;
+  if (state === 'active') {
+    el.querySelector('.mb-step-icon').innerHTML = '<div class="mb-spinner"></div>';
+  } else if (state === 'done') {
+    el.querySelector('.mb-step-icon').innerHTML = '\u2713';
+  } else if (state === 'error') {
+    el.querySelector('.mb-step-icon').innerHTML = '\u2717';
+  }
+  if (detail) document.getElementById('processDetail').textContent = detail;
+}
+function showProgressError(msg) {
+  document.getElementById('processErrorMsg').textContent = msg;
+  document.getElementById('processError').style.display = 'block';
+}
+function hideProgress() { document.getElementById('processOverlay').style.display = 'none'; }
+
+// ── Core Processing Pipeline ──
+async function processAudioFile(file) {
+  const proxyUrl = localStorage.getItem('mb_proxy_url');
+  const dgKey = localStorage.getItem('mb_dg_key');
+  const antKey = localStorage.getItem('mb_ant_key');
+
+  _abortCtrl = new AbortController();
+  const signal = _abortCtrl.signal;
+  const sizeMB = (file.size / 1048576).toFixed(1);
+
+  showProgress(file.name);
+
+  try {
+    // Step 1: Read file
+    updateStep(0, 'active', file.name + ' (' + sizeMB + ' MB)');
+    const audioBytes = await file.arrayBuffer();
+    updateStep(0, 'done');
+
+    // Step 2: Transcribe
+    updateStep(1, 'active', 'Uploading to Deepgram...');
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const mimeMap = {'.wav':'audio/wav','.mp3':'audio/mpeg','.m4a':'audio/mp4',
+      '.ogg':'audio/ogg','.flac':'audio/flac','.webm':'audio/webm',
+      '.mp4':'video/mp4','.wma':'audio/x-ms-wma','.aac':'audio/aac'};
+    const contentType = mimeMap[ext] || 'audio/mp4';
+
+    const dgResp = await fetch(proxyUrl + '/transcribe', {
+      method: 'POST', signal,
+      headers: {'Content-Type': contentType, 'X-DG-Key': dgKey},
+      body: audioBytes
+    });
+    if (!dgResp.ok) {
+      const errText = await dgResp.text();
+      throw new Error('Transcription failed (' + dgResp.status + '): ' + errText.slice(0, 200));
+    }
+    const dgResult = await dgResp.json();
+    updateStep(1, 'done', 'Transcription complete');
+
+    // Parse Deepgram response
+    const duration = dgResult.metadata?.duration || 0;
+    const utts = dgResult.results?.utterances || [];
+    const speakerSet = new Set();
+    const transcript = [];
+    for (const u of utts) {
+      const s = u.speaker || 0;
+      speakerSet.add(s);
+      transcript.push({
+        speaker: s,
+        start: Math.round(u.start * 100) / 100,
+        end: Math.round(u.end * 100) / 100,
+        text: (u.transcript || '').trim()
+      });
+    }
+    const fullText = transcript.map(t => 'Speaker ' + (t.speaker + 1) + ': ' + t.text).join('\n');
+    const wordCount = transcript.reduce((a, t) => a + t.text.split(/\s+/).filter(Boolean).length, 0);
+
+    let language = 'en';
+    const chs = dgResult.results?.channels || [];
+    if (chs.length && chs[0].alternatives?.length) {
+      language = chs[0].alternatives[0].detected_language || 'en';
+    }
+
+    if (transcript.length === 0) {
+      throw new Error('No speech detected in audio. Check your recording.');
+    }
+
+    // Step 3: Summarize
+    updateStep(2, 'active', 'Analyzing with AI...');
+    const sumResp = await fetch(proxyUrl + '/summarize', {
+      method: 'POST', signal,
+      headers: {'Content-Type': 'application/json', 'X-Anthropic-Key': antKey},
+      body: JSON.stringify({transcript: fullText, speaker_count: speakerSet.size, language: language})
+    });
+    if (!sumResp.ok) {
+      const errText = await sumResp.text();
+      throw new Error('Summarization failed (' + sumResp.status + '): ' + errText.slice(0, 200));
+    }
+    const sumResult = await sumResp.json();
+
+    let summaryText = (sumResult.content?.[0]?.text || '').trim();
+    summaryText = summaryText.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+    let summary;
+    try { summary = JSON.parse(summaryText); }
+    catch (e) {
+      summary = {title:'Meeting Notes', overview:summaryText.slice(0,500),
+        key_decisions:[], action_items:[], topics:[], follow_ups:[], sentiment:'neutral'};
+    }
+    updateStep(2, 'done');
+
+    // Step 4: Create meeting object
+    const now = new Date();
+    const mid = now.toISOString().replace(/[-:T]/g,'').slice(0,15) + '_' + Math.random().toString(36).slice(2,8);
+    const speakersObj = {};
+    [...speakerSet].sort((a,b)=>a-b).forEach(s => { speakersObj[String(s)] = 'Speaker ' + (s + 1); });
+
+    const meeting = {
+      id: mid,
+      title: summary.title || 'Untitled Meeting',
+      date: now.toISOString(),
+      duration_seconds: Math.round(duration),
+      audio_file: null,
+      language: language,
+      speakers: speakersObj,
+      transcript: transcript,
+      summary: summary,
+      word_count: wordCount,
+      _source: 'phone'
+    };
+
+    // Save to localStorage
+    const uploaded = JSON.parse(localStorage.getItem('mb_meetings') || '[]');
+    uploaded.unshift(meeting);
+    localStorage.setItem('mb_meetings', JSON.stringify(uploaded));
+
+    // Update in-memory array and re-render
+    MEETINGS.unshift(meeting);
+    MEETINGS.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+    updateStep(3, 'done', 'Meeting saved!');
+    document.getElementById('uploadFab').classList.remove('pulse');
+    setTimeout(() => {
+      hideProgress();
+      renderStats();
+      renderMeetingList();
+      selectMeeting(meeting.id);
+      showToast('Meeting processed!', 'success');
+    }, 800);
+
+  } catch (err) {
+    if (err.name === 'AbortError') { hideProgress(); return; }
+    const currentStep = document.querySelector('.mb-step.active');
+    if (currentStep) {
+      const idx = parseInt(currentStep.id.replace('pStep', ''));
+      updateStep(idx, 'error');
+    }
+    showProgressError(err.message);
+  }
+}
+
 // ── Init ──
+if (window.innerWidth < 800 || /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+  const ed = document.getElementById('emptyDesktop');
+  const ec = document.getElementById('emptyCmdLine');
+  const em = document.getElementById('emptyMobile');
+  if (ed) ed.style.display = 'none';
+  if (ec) ec.style.display = 'none';
+  if (em) em.style.display = 'block';
+}
+if (MEETINGS.length) document.getElementById('uploadFab').classList.remove('pulse');
 renderStats();
 renderMeetingList();
 if (MEETINGS.length) selectMeeting(MEETINGS[0].id);
 </script>
+
+<!-- Settings Modal -->
+<div class="mb-overlay" id="settingsOverlay" style="display:none" onclick="closeSettings()">
+<div class="mb-modal" onclick="event.stopPropagation()">
+  <div class="mb-modal-title">Settings</div>
+  <div class="mb-field">
+    <label>Proxy URL</label>
+    <input type="text" id="sProxyUrl" placeholder="https://your-proxy.deno.dev">
+    <div class="mb-hint">Deno Deploy proxy URL for Meeting Brain</div>
+  </div>
+  <div class="mb-field">
+    <label>Deepgram API Key</label>
+    <div class="mb-field-row">
+      <input type="password" id="sDgKey" placeholder="dg_xxxxxxxx">
+      <button class="mb-eye" onclick="toggleVis('sDgKey')">&#128065;</button>
+    </div>
+    <div class="mb-hint">Free tier: $200 credit at <a href="https://deepgram.com" style="color:var(--cyan)" target="_blank">deepgram.com</a></div>
+  </div>
+  <div class="mb-field">
+    <label>Anthropic API Key</label>
+    <div class="mb-field-row">
+      <input type="password" id="sAntKey" placeholder="sk-ant-xxxxxxxx">
+      <button class="mb-eye" onclick="toggleVis('sAntKey')">&#128065;</button>
+    </div>
+    <div class="mb-hint">For AI summarization at <a href="https://console.anthropic.com" style="color:var(--cyan)" target="_blank">console.anthropic.com</a></div>
+  </div>
+  <div class="mb-btns">
+    <button class="mb-btn-secondary" onclick="closeSettings()">Cancel</button>
+    <button class="mb-btn-primary" onclick="saveSettings()">Save</button>
+  </div>
+</div>
+</div>
+
+<!-- Processing Overlay -->
+<div class="mb-overlay" id="processOverlay" style="display:none">
+<div class="mb-modal">
+  <div class="mb-modal-title" id="processTitle">Processing Audio</div>
+  <div class="mb-steps" id="processSteps">
+    <div class="mb-step" id="pStep0"><div class="mb-step-icon">1</div><div class="mb-step-label">Reading file</div></div>
+    <div class="mb-step" id="pStep1"><div class="mb-step-icon">2</div><div class="mb-step-label">Transcribing speech</div></div>
+    <div class="mb-step" id="pStep2"><div class="mb-step-icon">3</div><div class="mb-step-label">AI analysis</div></div>
+    <div class="mb-step" id="pStep3"><div class="mb-step-icon">&#10003;</div><div class="mb-step-label">Complete</div></div>
+  </div>
+  <div class="mb-step-detail" id="processDetail"></div>
+  <div class="mb-error-box" id="processError" style="display:none">
+    <div class="mb-error-msg" id="processErrorMsg"></div>
+    <div class="mb-error-btns">
+      <button class="mb-btn-secondary" onclick="hideProgress()">Close</button>
+      <button class="mb-btn-primary" onclick="retryUpload()">Retry</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Upload FAB -->
+<button class="mb-fab pulse" id="uploadFab" onclick="triggerUpload()" title="Upload recording">
+  <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+</button>
+<input type="file" id="audioFileInput" accept=".m4a,.wav,.mp3,.webm,.ogg,.mp4,.aac,.flac,.wma" style="display:none" onchange="handleFileSelect(event)">
+
+<!-- Toast -->
+<div class="mb-toast" id="mbToast"></div>
+
 </body>
 </html>
