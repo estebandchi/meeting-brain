@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b1120">
@@ -25,7 +25,8 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
   height:100vh; overflow:hidden; }
 
 /* ── Header ── */
-.header { grid-column:1/-1; padding:14px 24px; display:flex; align-items:center; gap:16px;
+.header { grid-column:1/-1; padding:14px 24px; padding-top:calc(14px + env(safe-area-inset-top, 0px));
+  display:flex; align-items:center; gap:16px; position:relative; z-index:101;
   background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(245,158,11,0.06));
   border-bottom:1px solid var(--border); }
 .header .logo { font-size:1.3em; font-weight:700; letter-spacing:-0.5px; }
@@ -207,7 +208,7 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
 .mb-btn-secondary { background:var(--surface2); color:var(--text2); border:1px solid var(--border) !important; }
 .mb-btn-secondary:hover { color:var(--text); }
 
-.mb-fab { position:fixed; bottom:24px; right:24px; width:56px; height:56px;
+.mb-fab { position:fixed; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); right:24px; width:56px; height:56px;
   border-radius:50%; background:linear-gradient(135deg, var(--amber), var(--amber2));
   border:none; cursor:pointer; z-index:50; display:flex; align-items:center;
   justify-content:center; box-shadow:0 4px 20px rgba(245,158,11,0.35);
@@ -268,7 +269,6 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
   <div class="stats" id="stats"></div>
 </div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
   <div class="sidebar-search">
@@ -276,6 +276,7 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
   </div>
   <div class="meeting-list" id="meetingList"></div>
 </div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div class="main" id="main">
   <div class="empty" id="emptyState">
@@ -287,13 +288,23 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var
     </div>
     <div class="empty-cmd" id="emptyCmdLine">python meeting_brain.py process recording.wav</div>
     <div class="empty-text" id="emptyMobile" style="display:none">
-      Tap the <b style="color:var(--amber)">upload button</b> below to add a voice memo,<br>
-      or tap the <b>gear icon</b> above to set up your API keys first.
+      <button onclick="triggerUpload()" style="display:inline-flex;align-items:center;gap:10px;
+        padding:16px 32px;border-radius:14px;border:none;cursor:pointer;font-size:1.05em;
+        font-weight:600;font-family:inherit;margin:20px 0 12px;color:#000;
+        background:linear-gradient(135deg,var(--amber),var(--amber2));
+        box-shadow:0 4px 20px rgba(245,158,11,0.35);">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Upload Voice Memo
+      </button>
+      <div style="color:var(--text3);font-size:0.82em;line-height:1.6;margin-top:4px">
+        Record on your phone, then upload the .m4a file here.<br>
+        AI will transcribe and summarize it instantly.
+      </div>
     </div>
-    <div class="empty-text" style="margin-top:16px">
-      Get free API keys:<br>
-      Deepgram ($200 credit): deepgram.com<br>
-      Anthropic: console.anthropic.com
+    <div class="empty-text" id="emptyApiHint" style="margin-top:16px">
+      <div style="font-size:0.8em;color:var(--text3)">
+        First time? Tap <span style="color:var(--text2);cursor:pointer" onclick="openSettings()">Settings</span> to add your API keys.
+      </div>
     </div>
   </div>
 
@@ -553,7 +564,10 @@ function globalSearchFn() {
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const ol = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ol.style.display = sb.classList.contains('open') ? 'block' : 'none';
 }
 
 // ── Settings ──
@@ -824,9 +838,11 @@ if (window.innerWidth < 800 || /iPhone|iPad|Android/i.test(navigator.userAgent))
   const ed = document.getElementById('emptyDesktop');
   const ec = document.getElementById('emptyCmdLine');
   const em = document.getElementById('emptyMobile');
+  const eh = document.getElementById('emptyApiHint');
   if (ed) ed.style.display = 'none';
   if (ec) ec.style.display = 'none';
   if (em) em.style.display = 'block';
+  if (eh && localStorage.getItem('mb_proxy_url')) eh.style.display = 'none';
 }
 if (MEETINGS.length) document.getElementById('uploadFab').classList.remove('pulse');
 renderStats();
